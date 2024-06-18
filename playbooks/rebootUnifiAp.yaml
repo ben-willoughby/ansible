@@ -1,0 +1,19 @@
+---
+# Reboot the AP from the switch port (port 9)
+- name: Reboot AP from switch
+  hosts: # switch IP
+  gather_facts: false
+  tasks:
+  - name: Shut down port 9 (Unifi AP)
+    ios_config:
+      lines:
+        - shutdown
+      parents: interface GigabitEthernet0/9
+  - name: Wait for 10 seconds and start port 
+    wait_for:
+      timeout: 10
+  - name: Start up port 9 (Unifi AP)
+    ios_config:
+      lines:
+        - no shutdown
+      parents: interface GigabitEthernet0/9

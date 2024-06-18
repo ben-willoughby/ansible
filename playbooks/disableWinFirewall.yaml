@@ -1,0 +1,13 @@
+# Turn off the windows firewall
+- name: Turn off the windows firewall on all profiles
+  # hosts: [xxxxxxxx]
+  gather_facts: false
+  tasks:
+  - name: Turn off firewall
+    win_firewall:
+      state: disabled
+      profiles:
+      - Domain
+      - Private
+      - Public
+    tags: disable_firewall

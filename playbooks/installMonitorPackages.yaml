@@ -1,0 +1,45 @@
+- name: Install latest zabbix packages
+  hosts: [xxxxxxxx]
+  become: true
+  tasks:
+  - name: Install nginx
+    yum:
+      name: nginx
+      state: latest
+  - name: Install mariadb (MySQL)
+    yum:
+      name: mariadb-server
+      state: latest
+  - name: Install Zabbix
+    dnf:
+      name:
+        - zabbix-server-mysql
+        - zabbix-web-mysql
+        - zabbix-nginx-conf
+        - zabbix-agent
+      state: latest
+  - name: Start & enable all services
+    systemd:
+      state: started
+      enabled: yes
+      name:
+        - nginx
+        - mysqld
+        - zabbix-server
+- name: Keep Grafana up to date
+  hosts: grafana-ct-2
+  become: true
+  tasks:
+  - name: Update Grafana & InfluxDB
+    yum:
+      name: 
+        - grafana
+        - influxdb
+      state: latest
+  - name: Restart Grafana & InfluxDB
+    systemd:
+      state: restarted
+      enabled: yes
+      name:
+        - grafana-server
+        - influxdb

@@ -1,0 +1,8 @@
+- name: Update all packages to the latest version (except kernel)
+  hosts: rhel
+  become: true
+  - tasks:
+    yum:
+      name: '*'
+      state: latest
+      exclude: kernel*

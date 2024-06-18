@@ -1,0 +1,39 @@
+---
+# Install notepad++ & robo3t
+- name: Install extra software
+  hosts: VM1
+  
+  gather_facts: false
+  tasks:
+  # Download the packages
+    - name: Download robo3t 1.2.1
+      win_get_url:
+        # url: 
+        dest: C:\temp\extras\robo3t-1.2.1-windows-x86_64-3e50a65.exe
+    - name: Download UAExpert
+      win_get_url:
+        # url:
+        dest: C:\temp\extras\uaexpert-bin-win32-x86-vs2008sp1-v1.4.4-275.exe
+        # checksum: 
+        checksum_algorithm: md5
+
+    - name: Make sure Google Chrome is installed
+      win_chocolatey:
+        name: googlechrome
+        state: present
+        version: latest
+    - name: Make sure Notepad++ 7.5.8 is installed
+      win_chocolatey:
+        name: notepadplusplus
+        state: present
+        version: '7.5.8'
+    - name: Make sure Robo3t 1.2.1 is installed
+      win_package:
+        path: C:\temp\extras\robo3t-1.2.1-windows-x86_64-3e50a65.exe
+        state: present
+        arguments: /S
+    - name: Make sure UAExpert is installed
+      win_package:
+        path: C:\temp\extras\uaexpert-bin-win32-x86-vs2008sp1-v1.4.4-275.exe
+        state: present
+        arguments: /S

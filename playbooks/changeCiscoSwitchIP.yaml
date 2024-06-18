@@ -1,0 +1,10 @@
+- name: Change Cisco Switch IP
+  hosts: # [host/IP]# add host here
+  gather_facts: false
+  tasks:
+  - name: Change ip address
+    ios_command:
+      lines:
+        - interface Vlan # [xxx] # add VLAN number here
+        - ip address # [xxx.xxx.xxx.xxx] [xxx.xxx.xxx.xxx] # add IP and subnet to change to here
+        

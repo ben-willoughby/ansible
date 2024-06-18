@@ -1,0 +1,15 @@
+# Sends the necessary commands to the reverse proxy server to get it to update DNS
+- name: Fix DNS on reverse proxy
+#  hosts: reverse_proxy_server
+  hosts: rproxy
+  become: true
+  gather_facts: false
+  tasks:
+  - name: Convert netplan YAML into config understood by NetworkManager
+    command: netplan generate
+  - name: Applies config to NetworkManager
+    command: netplan apply
+  - name: reloads nginx
+    service:
+      name: nginx
+      state: reloaded

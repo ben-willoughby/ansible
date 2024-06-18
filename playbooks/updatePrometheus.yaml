@@ -1,0 +1,18 @@
+- name: Copy latest prometheus config to prometheus container
+  hosts: [xxxxxxxx]
+  tasks:
+  - name: copy config to mon-ct-1
+    copy:
+      src: /etc/ansible/configs/prometheus.yml
+      dest: /etc/prometheus/prometheus.yml
+      # owner: [xxxxxxxx]
+      # group: [xxxxxxxx]
+      # mode: '0664'
+- name: Restart Prometheus daemon
+  hosts: [xxxxxxxx]
+  become: true
+  tasks:
+  - name: restart prometheus
+    systemd:
+      state: restarted
+      name: prometheus
