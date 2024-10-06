@@ -2,7 +2,7 @@
 # Description: Playbook to email java reports
 #--------------------------------------------------------------
 - name: Copy nonprod java report
-  hosts: svtlinif005
+  hosts: <repo_server_nonprod>
   become: false
   tasks:
     - name: Run date command and register as variable
@@ -14,7 +14,7 @@
       shell: scp /repository/shared/javaAudit/Java_Reports/nonprod-java-installations_{{ DATE.stdout }}.csv svplinif001:/repository/shared/javaAudit/Java_Reports/nonprod-java-installations_{{ DATE.stdout }}.csv
 
 - name: Send prod java report
-  hosts: svplinif001
+  hosts: <repo_server_prod>
   become: true
   tasks:
     - name: Run date command and register as variable
@@ -27,9 +27,9 @@
       mail:
         subject: Java Reports
         body: Please see attached java reports
-        from: ansible@wolseley.co.uk (Java Reports)
+        from: <email> (Java Reports)
         to:
-        - 'ben.willoughby@wolseley.co.uk'
+        - '<email>'
         # cc:
         attach:
         - /repository/shared/javaAudit/Java_Reports/nonprod-java-installations_{{ DATE.stdout }}.csv
