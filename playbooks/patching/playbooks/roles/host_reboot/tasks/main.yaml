@@ -1,0 +1,23 @@
+---
+- name: Checking if reboot flag exists
+  stat:
+    path: /tmp/reboot
+  register: reboot
+
+- name: Clearing reboot flag
+  file:
+    path: /tmp/reboot
+    state: absent
+  when: reboot.stat.exists == true
+
+- name: reboots hosts in order
+  throttle: 1
+  reboot:
+    reboot_timeout: 1800
+    test_command: uptime
+  when: reboot.stat.exists == true
+
+- shell: uptime
+  register: uptime
+
+- debug: var=uptime.stdout

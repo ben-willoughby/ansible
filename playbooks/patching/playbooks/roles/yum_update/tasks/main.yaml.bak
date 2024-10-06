@@ -1,0 +1,97 @@
+---
+#
+##############################################################
+#                  Pre-Update Hosting Checks                 #
+##############################################################
+##                  Check Running Services                   #
+##############################################################
+#- name: "Return service state information"
+#  service_facts:
+#
+##############################################################
+##                Check Mounted File Systems                 #
+##############################################################
+#- name: "Collect a list of the local mounted filesystems"
+#  set_fact:
+#    mounted_devices: "{{ ansible_mounts | selectattr('fstype', 'eq', 'ext4') | map(attribute='mount') | list }}"
+#
+#- name: "Collect a list of NFS4 mounts" 
+#  set_fact: 
+#    nfs4_fs: "{{ ansible_mounts | selectattr('fstype', 'eq', 'nfs4') | map(attribute='mount') | list }}"
+#
+#- name: "Collect a list of NFS3 mounts" 
+#  set_fact: 
+#    nfs_fs: "{{ ansible_mounts | selectattr('fstype', 'eq', 'nfs') | map(attribute='mount') | list }}"
+#
+#- name: "Collect a list of SMB mounts" 
+#  set_fact: 
+#    cifs_fs: "{{ ansible_mounts | selectattr('fstype', 'eq', 'cifs') | map(attribute='mount') | list }}"
+##############################################################
+##                 Check Network Interfaces                  #
+##############################################################
+#- name: "Collect a list of network interfaces and IPs"
+#  debug:
+#    msg: "{{ item }}"
+#  loop: "{{ ansible_interfaces }}"
+#  when:
+#    - hostvars[inventory_hostname]['ansible_%s' | format(item)]['ipv4'] is defined
+#    - hostvars[inventory_hostname]['ansible_%s' | format(item)]['active'] == true
+#    - hostvars[inventory_hostname]['ansible_%s' | format(item)]['device'] != 'lo'
+#  register: NIC_interface
+#
+#- name: "get the IP address for each interface" 
+#  debug:   
+#    msg: "{{ hostvars[inventory_hostname]['ansible_%s' | format(item.item)]['ipv4']['address'] }}"
+#  loop: "{{ NIC_interface['results'] }}"
+#  when: item.skip_reason is not defined
+#  register: NIC_IP
+#
+##############################################################
+##                    Check Time Drift                       #
+##############################################################
+#- block: 
+#  - name: "Pre Boot Time Drift"
+#    shell: '/repository/swstage/scripts/DriftChk.sh'
+#    register: PRETIMEDRIFT
+#
+##############################################################
+##                Check Kernel Parameters                    #
+##############################################################
+#- name: "Collect all Kernel Parameters"
+#  shell: 'sysctl -a | egrep -v "fs.dentry-state|fs.inode-nr|fs.inode-state|kernel.ns_last_pid|kernel.random.entropy_avail|kernel.random.uuid" | xargs'
+#  register: KERNEL_PARAMS
+#
+#- name: "copy kernel params pre reboot"
+#  copy:
+#    content: "{{ KERNEL_PARAMS }}"
+#    dest: /opt/home/ansible_svc/pre_reboot/kernel.out
+#
+##############################################################
+##              Check Current Kernel Version                 #
+##############################################################
+#
+#
+#
+#
+#
+##############################################################
+##         Run Updates and Set Reboot Flag if Required       #
+##############################################################
+- name: yum upgrade all packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: Comparing last kernel and running kernel
+  shell: |
+    LAST_KERNEL=$(rpm -q --last kernel | perl -pe 's/^kernel-(\S+).*/$1/' | head -1)
+    CURRENT_KERNEL=$(uname -r)
+
+    if [[ $LAST_KERNEL != $CURRENT_KERNEL ]]; then
+      # Set reboot flag
+      touch /tmp/reboot
+      # Shutdown/stop any services before reboot if exists.
+      if [[ -f /opt/home/ansible_svc/pre_reboot.sh ]]; then
+        /opt/home/ansible_svc/pre_reboot.sh
+      fi
+    fi

@@ -1,0 +1,22 @@
+---
+#------------------------------------------------------------------------------
+# Description: Check for existence of pre_update.sh script and run it if
+#              found.
+#------------------------------------------------------------------------------
+- name: Checking if pre_update.sh script exists
+  stat:
+    path: /opt/home/ansible_svc/pre_update.sh
+  register: pre_scripts
+
+
+- name: Running pre update script
+  #command: sh /opt/home/ansible_svc/pre_update.sh
+  shell: /opt/home/ansible_svc/pre_update.sh > /opt/home/ansible_svc/pre_update.out 2>&1
+  when: pre_scripts.stat.exists == true
+  ignore_errors: no
+    
+- wait_for: 
+    path: /opt/home/ansible_svc/pre_update.out 
+    search_regex: "app status: running"
+    #timeout: 300
+    timeout: 60

@@ -1,0 +1,94 @@
+---
+#--------------------------------------------------------------
+# Description: Playbook to perform "yum update" on selected hosts 
+#       NOTE: this playbook will reboot hosts when kernel is updated
+#--------------------------------------------------------------
+- hosts: testgroup
+##############################################################
+# Run Pre tasks
+##############################################################
+  become: true
+  pre_tasks:
+   - mail:
+       subject: 'OS patching for {{ ansible_hostname }} is beginning now.'
+       from: '<email>'
+       body: 'Automated OS patching for {{ ansible_hostname }} is beginning now.'
+       to: '<email>'
+       charset: utf8
+     delegate_to: localhost
+     tags: mail
+
+   - name: Set SCOM agent to maintenance mode. 
+     ansible.builtin.lineinfile:
+       path: /var/log/scom-agent.log
+       create: yes
+       insertafter: EOF
+       owner: root
+       group: root
+       mode: 0644
+       line: "{{ lookup('pipe', 'date +%d/%m/%Y_%H:%M') }},START,45,Linux Kernel Patching,PlannedOperatingSystemReconfiguration"
+
+   - name: 'Sleep for 5 mins while monitoring enters maintenance mode.'
+     ansible.builtin.pause:
+       minutes: 5
+        
+##############################################################
+# Execute shutdown,update,startup tasks
+##############################################################
+  roles: 
+    # - { role: stop_MFT, become: true }
+    # - { role: pre_update, become: true }
+    # - { role: yum_noreboot, become: true }
+    # - { role: pre_db, become: true }
+    # - { role: yum_update, become: true }
+    # - { role: host_reboot, become: true }
+    # - { role: hosting_post_checks, become: true }
+    # - { role: post_db, become: true }
+    # - { role: post_update, become: true }
+    - { role: remove_old_kernels, become: true}
+
+################################################################
+# Run Post Tasks
+################################################################
+  post_tasks:
+    # - name: Stop SCOM agent Maintenance Mode
+    #   ansible.builtin.lineinfile: 
+    #     path: /var/log/scom-agent.log
+    #     insertafter: EOF
+    #     line: "{{ lookup('pipe', 'date +%d/%m/%Y_%H:%M') }},STOP"
+
+    # - name: 'Sleep for 5 mins while SCOM Maintenance Mode is stopped'
+    #   ansible.builtin.pause: 
+    #     minutes: 5
+
+    - mail:
+        subject: 'OS patching for {{ ansible_hostname }} has completed.'
+        from: '<email>'
+        body: "Automated OS patching for {{ ansible_hostname }} has completed."
+        to: '<email>'
+        charset: utf8
+      delegate_to: localhost
+      tags: mail 
+
+##############################################################
+# Patch server group 2
+##############################################################
+#- hosts: testgroup2
+
+##############################################################
+## Run Pre tasks (Bootchk.sh -b)
+###############################################################
+#  pre_tasks:
+
+
+##############################################################
+# Execute shutdown,update,startup tasks
+##############################################################
+#  roles:
+#    - { role: pre_update, become: true }
+#    - { role: yum_update, become: true }
+#    - { role: post_update, become: true }
+
+################################################################
+# Run Post Tasks (Bootchk.sh -p)
+################################################################

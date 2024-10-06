@@ -1,0 +1,16 @@
+---
+- name: Remove old kernel versions
+  hosts: kernels
+  become: true
+  tasks:
+    - name: Remove old kernel versions v7
+      command: package-cleanup --oldkernels --count=1 -y
+      when: 
+        - ansible_facts['os_family'] == "RedHat"
+        - ansible_facts['distribution_major_version'] == "7"
+
+    - name: Remove old kernel versions v8 and 9
+      shell: yum remove $(yum repoquery --installonly --latest-limit=-1 -q) -y
+      when: 
+        - ansible_facts['os_family'] == "RedHat"
+        - (ansible_facts['distribution_major_version'] | int) >= 8

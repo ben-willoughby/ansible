@@ -1,0 +1,118 @@
+---
+#- name: Checking if reboot flag exists
+#  stat:
+#    path: /tmp/reboot
+#  register: reboot
+#
+#- name: Clearing reboot flag
+#  file:
+#    path: /tmp/reboot
+#    state: absent
+#  when: reboot.stat.exists == true
+#
+#- name: reboots hosts in order
+#  throttle: 1
+#  reboot:
+#    reboot_timeout: 1800
+#    test_command: uptime
+#  when: reboot.stat.exists == true
+#
+#- shell: uptime
+#  register: uptime
+
+#- debug: var=uptime.stdout
+
+- name: check if post script exists
+  stat: 
+    path: /opt/home/ansible_svc/post_update.sh
+  register: post_scripts
+
+- name: 
+  command: sh /opt/home/ansible_svc/post_update.sh
+  when: post_scripts.stat.exists == true
+  ignore_errors: no
+
+###############################################################
+###                Post Reboot Hosting Checks                 #
+###############################################################
+###                  Check Running Services                   #
+###############################################################
+#- block:
+#  - name: "Make sure services from the pre-check are running"
+#    service:
+#      name: "{{ item }}"
+#      state: started
+#    when: ansible_facts.services[item]['state'] == "running"
+#    loop: "{{ ansible_facts.services.keys() | list }}"
+##############################################################
+##                Check Mounted File Systems                 #
+##############################################################
+#- block:
+#  - name: "Check if the local filesystems are mounted"
+#    shell: df -h | grep "{{ item }}"
+#    changed_when: false
+#    register: fs_checked
+#    loop: "{{ mounted_devices }}"
+#
+#  - name: "Check if NFS4 fileshare are mounted."
+#    shell: df -h | grep "{{ item }}"
+#    changed_when: false
+#    register: nfs4_checked
+#    loop: "{{ nfs4_fs }}"
+#
+#  - name: "Check if NFS3 fileshare are mounted."
+#    shell: df -h | grep "{{ item }}"
+#    changed_when: false
+#    register: nfs3_checked
+#    loop: "{{ nfs_fs }}"
+#
+#  - name: "Check if SMB fileshare are mounted."
+#    shell: df -h | grep "{{ item }}"
+#    changed_when: false
+#    register: cifs_checked
+#    loop: "{{ cifs_fs }}"
+##############################################################
+##                 Check Network Interfaces                  #
+##############################################################
+#- block:
+#  - name: "Assert that the interface status is active"
+#    assert:
+#      that: "{{ hostvars[inventory_hostname]['ansible_%s' | format(item.item)]['active'] }} == true "
+#    loop: "{{ NIC_interface['results'] }}"
+#
+#- block:
+#  - name: "Assert that the interface IP address does not change"
+#    assert:
+#      that:  item.msg in ansible_all_ipv4_addresses  
+#    loop: "{{ NIC_IP['results'] }}"
+#
+##############################################################
+##                    Check Time Drift                       #
+##############################################################
+#- block: 
+#  - name: "Check Server Time Drift"
+#    shell: '/repository/swstage/scripts/DriftChk.sh'
+#    register: POSTTIMEDRIFT
+#
+#  - name: "check output"
+#    ansible.builtin.debug:
+#      var: "{{ POSTTIMEDRIFT }}"
+#      verbosity: 2
+#
+##############################################################
+##                Check Kernel Parameters                    #
+##############################################################
+#- block:
+#  - name: "Compare Kernel params post reboot"
+#    shell: 'sysctl -a | egrep -v "fs.dentry-state|fs.inode-nr|fs.inode-state|kernel.ns_last_pid|kernel.random.entropy_avail|kernel.random.uuid" | xargs'
+#    register: POSTKERNELPARAMS
+# 
+#  - name: "compare kernel params post"
+#    copy: 
+#      content: "{{ POSTKERNELPARAMS }}"
+#      dest: /opt/home/ansible_svc/post_reboot/kernel.out
+#  
+##############################################################
+##              Check Current Kernel Version                 #
+##############################################################
+

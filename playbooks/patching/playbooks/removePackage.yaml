@@ -1,0 +1,13 @@
+---
+- name: Remove old packages
+  hosts: pkgrm
+  become: true
+  tasks:
+    - name: Remove grafana
+      package: 
+        name: grafana
+        state: absent
+    - name: Remove grafana-selinux
+      package: 
+        name: grafana-selinux
+        state: absent

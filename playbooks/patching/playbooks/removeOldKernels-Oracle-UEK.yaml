@@ -1,0 +1,23 @@
+---
+- name: Remove old kernels excluding the current and UEK kernels
+  hosts: oel
+  become: yes
+  tasks:
+    - name: Get the currently running kernel version
+      shell: uname -r
+      register: current_kernel
+    - name: Get the list of installed kernels
+      shell: rpm -q kernel kernel-uek
+      register: installed_kernels
+    - name: Filter out the current and UEK kernels
+      set_fact:
+        kernels_to_remove: "{{ installed_kernels.stdout_lines | difference([current_kernel.stdout]) | select('match', '^kernel-(uek-)?[0-9]') | list }}"
+    - name: Debug - Print kernels to remove
+      debug:
+        var: kernels_to_remove
+    - name: Remove old kernels
+      yum:
+        name: "{{ item }}"
+        state: absent
+      loop: "{{ kernels_to_remove }}"
+      when: kernels_to_remove | length > 0

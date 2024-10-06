@@ -1,0 +1,54 @@
+#--------------------------------------------------------------
+# Description: Playbook to run a java report on selected hosts
+#              and email the output
+#--------------------------------------------------------------
+- name: Run Java data collection script (nonprod)
+  hosts: nonprod
+  become: true
+  tasks:
+    - name: Run Script
+      script: /repository/swstage/scripts/java_data_collection_script_nonprod.sh
+
+- name: Run Java data collection script (prod)
+  hosts: prod
+  become: true
+  tasks:
+    - name: Run Script
+      script: /repository/swstage/scripts/java_data_collection_script_prod.sh
+
+- name: Copy nonprod java report
+  hosts: <repo_server_nonprod>
+  become: false
+  tasks:
+    - name: Run date command and register as variable
+      # shell: "date -d yesterday +%F"
+      shell: "date +%F"
+      register: DATE
+      ignore_errors: true
+    - name: transfer file from nonprod to prod repo
+      shell: scp /repository/shared/javaAudit/Java_Reports/nonprod-java-installations_{{ DATE.stdout }}.csv <repo_server_prod>:/repository/shared/javaAudit/Java_Reports/nonprod-java-installations_{{ DATE.stdout }}.csv
+
+- name: Email reports
+  hosts: <repo_server_prod>
+  become: true
+  tasks:
+    - name: Run date command and register as variable
+      # shell: "date -d yesterday +%F"
+      shell: "date +%F"
+      register: DATE
+      ignore_errors: true
+
+    - name: Send e-mail to a bunch of users, attaching files
+      mail:
+        subject: Java Reports
+        body: Please see attached java reports
+        from: <email> (Java Reports)
+        to:
+        - '<email>'
+        # cc:
+        attach:
+        - /repository/shared/javaAudit/Java_Reports/nonprod-java-installations_{{ DATE.stdout }}.csv
+        - /repository/shared/javaAudit/Java_Reports/prod-java-installations_{{ DATE.stdout }}.csv
+        charset: utf8
+      delegate_to: localhost
+      tags: mail
