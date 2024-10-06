@@ -1,0 +1,47 @@
+---
+#-------------------------------------------------------------------------------
+# Description: Checks the existance of the DB Auto Start/Stop Script
+#              When found script is ran passing each $ORACLE_Home as an 
+#              argument
+#-------------------------------------------------------------------------------
+- name: Check DB shutdown start up script exists 
+  stat: 
+    path: "{{ STARTSTOP }}"
+  register: db_script
+
+- name: Start OEM Blackout
+  throttle: 1
+  shell: "{{ oem_agent_bin }} start blackout {{ blackout_reason }} -nodelevel -d {{ blackout_duration }}"
+  when: db_script.stat.exists == true
+  become_user: oracle 
+
+- block: 
+  - name: 
+    throttle: 1 
+    shell: "{{ STARTSTOP }} {{ ORACLE_HOME }} stop"
+    when: db_script.stat.exists == true
+    ignore_errors: no
+    become_user: "{{ DBUSER }}"
+    environment:
+      ORACLE_HOME: "{{ ORACLE_HOME }}"
+      PATH: "{{ PATH }}"
+
+#  - name: Find the state file 
+  - find:
+      paths: /tmp
+      patterns: "{{ statefile_regex }}"
+      use_regex: yes
+      file_type: file
+    register: dbstate
+   # timeout: 300
+   
+  - name: read statefile
+    command: cat "{{ dbstate.files[0].path }}"
+    register: stopped_dbs
+    ignore_errors: true
+
+  - name: print stopped dbs from state file
+    debug:
+      msg: "{{ stopped_dbs.stdout }}" 
+    ignore_errors: true
+

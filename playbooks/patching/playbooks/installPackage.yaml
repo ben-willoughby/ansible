@@ -1,0 +1,9 @@
+---
+- name: Insatall packages
+  hosts: pkginst
+  become: true
+  tasks:
+    - name: Install package
+      package: 
+        name: uptrack-offline
+        state: latest

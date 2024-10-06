@@ -1,0 +1,5 @@
+---
+statefile_regex: (sv[bdtsp]{1}[a-z]+db\d{3}|[ea]{1}\d{5})_stop_\d{2}-\d{2}-\d{2}\.dmp
+oem_agent_bin: /oracle/agent13c/GoldImage_V3/agent_13.5.0.0.0/bin/emctl
+blackout_reason: "Linux_Kernel_Patching"
+blackout_duration: 01:30

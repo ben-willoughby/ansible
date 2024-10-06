@@ -1,0 +1,63 @@
+--- 
+#-------------------------------------------------------------------------------
+# Description: Checks the existance of the DB Auto Start/Stop Script
+#              When found script is ran passing each $ORACLE_Home as an
+#              argument
+#-------------------------------------------------------------------------------
+
+- name: Check DB shutdown startup scrip exists
+  stat:
+    path: "{{ STARTSTOP }}"
+  register: db_script
+
+#- name: check state file exists from DB stop
+#  stat: 
+#    path: '/tmp/"{{ statefile_regex }}"' 
+#  register: stopped_statefile
+
+- find:
+    paths: /tmp
+    patterns: "{{ statefile_regex }}"
+    file_type: file
+    use_regex: yes
+  register: stopped_statefile
+  when: db_script.stat.exists == true
+
+- fail:
+    msg: state file is missing. Play failed.
+  when: stopped_statefile.matched == 0
+  ignore_errors: true
+
+- name: Wait for ohasd serice to start
+  service:
+    name: ohasd
+    state: started
+  when: db_script.stat.exists == true
+  register: ohasd_service
+  until: ohasd_service.status.ActiveState == "active"
+  retries: 15
+  delay: 20
+
+- block: 
+  - name: 
+    throttle: 1
+    shell: "{{ STARTSTOP }} {{ ORACLE_HOME }} start"
+    when: db_script.stat.exists == true
+    ignore_errors: no
+    become_user: "{{ DBUSER }}"
+    environment:
+      ORACLE_HOME: "{{ ORACLE_HOME }}"
+      PATH: "{{ PATH }}"
+
+  - name: Tidy State file post DB start
+    file: 
+      path: "{{ stopped_statefile.files[0].path }}"
+      state: absent
+    ignore_errors: true
+    #when: stopped_statefile.files[0].exists == true
+
+  - name: remove OEM Blackout
+    shell: "{{ oem_agent_bin }} stop blackout {{ blackout_reason }}"
+    when: db_script.stat.exists == true
+    become_user: oracle
+

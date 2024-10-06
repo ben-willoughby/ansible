@@ -1,0 +1,29 @@
+---
+#------------------------------------------------------------------------------
+# Description: Check for the existence of post_update.sh script and run it if
+#              found.
+#------------------------------------------------------------------------------
+- name: check if post script exists
+  stat: 
+    path: /opt/home/ansible_svc/post_update.sh
+  register: post_scripts
+
+- block: 
+  - name: 
+    throttle: 1
+    #command: sh /opt/home/ansible_svc/post_update.sh
+    shell: /opt/home/ansible_svc/post_update.sh > /opt/home/ansible_svc/post_update.out 2>&1
+    when: post_scripts.stat.exists == true
+    ignore_errors: no
+
+  - name:
+    wait_for: 
+      path: /opt/home/ansible_svc/post_update.out
+      search_regex: "running"
+      #timeout: 300
+      timeout: 60 #Maybe set this as a host variable so it can account for each apps/dbs estimated start time.
+      msg: "Application/DB Failed to Start Succesfully, Please investigate!"
+
+      #notify: (if wait_for failed notify alert handler to raise and alert)
+    when: post_scripts.stat.exists == true
+    ignore_errors: no

@@ -1,0 +1,3 @@
+---
+oem_agent_bin: /oracle/agent13c/GoldImage_V3/agent_13.5.0.0.0/bin/emctl
+blackout_reason: "Linux_Kernel_Patching"

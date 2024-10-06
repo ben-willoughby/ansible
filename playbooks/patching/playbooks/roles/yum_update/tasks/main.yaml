@@ -1,0 +1,22 @@
+---
+##############################################################
+##         Run Updates and Set Reboot Flag if Required       #
+##############################################################
+- name: yum upgrade all packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: Comparing last kernel and running kernel
+  shell: |
+    LAST_KERNEL=$(rpm -q --last kernel | perl -pe 's/^kernel-(\S+).*/$1/' | head -1)
+    CURRENT_KERNEL=$(uname -r)
+
+    if [[ $LAST_KERNEL != $CURRENT_KERNEL ]]; then
+      # Set reboot flag
+      touch /tmp/reboot
+      # Shutdown/stop any services before reboot if exists.
+      if [[ -f /opt/home/ansible_svc/pre_reboot.sh ]]; then
+        /opt/home/ansible_svc/pre_reboot.sh
+      fi
+    fi

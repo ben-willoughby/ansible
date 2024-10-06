@@ -1,0 +1,49 @@
+---
+- name: Upgrade OEL Kernel
+  hosts: oel
+  become: true
+  tasks:
+    - name: Remove F-Secure agent
+      package: 
+        name: f-secure-mdr
+        state: absent
+    - name: Get the kernel version
+      shell: uname -r
+      register: kernel_version
+    - name: Install Uptrack-updates from yum
+      package:
+        name: 'uptrack-updates-{{ kernel_version.stdout }}'
+        state: present
+        # when: kernel_version.stdout is defined
+      # package:
+        # name: "{{ uptrack-updates-`uname -r` }}"
+        # state: present
+    #   shell: yum install uptrack-updates-`uname -r`
+    # is uptrack upgrade needed after above?
+    # - name: Run uptrack-upgrade
+    #   shell: uptrack-upgrade -y
+    - name: Move F-Secure file
+      shell: mv /etc/opt/f-secure/mdr/baseguard/sensor.json /etc/opt/f-secure/mdr/baseguard/sensor.json.bak
+    # - name: Run puppet agent
+    #   shell: puppet agent --test
+    - name: Run puppet agent and fail if anything goes wrong
+      community.general.puppet:
+    - name: Email result
+      mail:
+        subject: 'OS patching for {{ ansible_hostname }} is beginning now.'
+        from: '<email>'
+        body: 'Automated OS patching for {{ ansible_hostname }} is beginning now.'
+        to: '<email>'
+        charset: utf8
+      delegate_to: localhost
+      tags: mail
+      # command: package-cleanup --oldkernels --count=1 -y
+      # when: 
+      #   - ansible_facts['os_family'] == "RedHat"
+      #   - ansible_facts['distribution_major_version'] == "7"
+
+    # - name: Remove old kernel versions v8 and 9
+    #   shell: yum remove $(yum repoquery --installonly --latest-limit=-1 -q) -y
+    #   when: 
+    #     - ansible_facts['os_family'] == "RedHat"
+    #     - (ansible_facts['distribution_major_version'] | int) >= 8
